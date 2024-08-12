@@ -47,30 +47,40 @@ def create_draft_rankings(fname):
     # Replace the empty ADPs
     proj_df['ADP'].replace({'-': '1250'}, inplace=True)
 
-    # Cahnge ADP column to float
+    # Change ADP column to float
     proj_df['ADP'] = proj_df.ADP.astype(float)
 
     # Sort in ascending order by ADP
     proj_df = proj_df.sort_values(by=['ADP'], ascending=True)
+    # print(proj_df)
 
     # Calculate the replacement level player value
     reps_df = get_replacements(proj_df)
+    # print(reps_df)
 
     # Calculate the average of the top 5 RP at each position
     rpv_df = calc_top_n(reps_df, 7)
+    # print(rpv_df)
 
     # Calculate estimated number of games
     proj_df["G"] = proj_df["FPts"] / proj_df["FP/G"]
 
     # calculate VORP/G
-    proj_df["VORPpg"] = 0
+    proj_df["VORP"] = 0
     for index, row in rpv_df.iterrows():
-        proj_df.loc[proj_df['Position'].str.contains(row["Position"]), ["VORPpg"]] = proj_df["FP/G"] - row[
+        proj_df.loc[proj_df['Position'].str.contains(row["Position"]), ["VORP"]] = proj_df["FPts"] - row[
             "RPV"]
 
-    proj_df["VORP"] = proj_df["VORPpg"] * proj_df["G"]
-    proj_df["aVORP"] = proj_df["VORP"] / 38
+    # proj_df["VORP"] = proj_df["VORPpg"] * proj_df["G"]
+    # proj_df["aVORP"] = proj_df["VORP"] / 38
 
-    proj_df = proj_df.sort_values(by=['aVORP'], ascending=False)
+    # Rank by VORP, reset index, add CORP ranking column
+    proj_df = proj_df.sort_values(by=['VORP'], ascending=False)
+    proj_df = proj_df.reset_index()
+    proj_df['VORPrk'] = proj_df.index + 1
+    proj_df['Value'] = proj_df['ADP'] - proj_df['VORPrk']
+
+    # Calculate ADP - VORPrk
+
 
     return proj_df
